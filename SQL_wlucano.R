@@ -121,7 +121,53 @@ cat("Varianza de Duración:", resultado$Varianza)
 dbListFields(con, "Invoice")
 dbListFields(con, "InvoiceLine")
 
-
 resultado <- dbGetQuery(con, "
-                        ")
+                        SELECT SUM(Total) AS Gran_Total,
+                               AVG(Total) AS Promedio_Factura
+                               FROM Invoice
+                             ")
 
+facturas_por_año <- dbGetQuery(con, "
+                              SELECT SUBSTR(InvoiceDate, 1, 4) AS Año,
+                                     COUNT(InvoiceId) AS Total_Facturas
+                              FROM Invoice
+                              GROUP BY Año
+                              ORDER BY Año DESC;
+")
+
+facturas_por_año
+########################################################
+
+facturas_por_pais <- dbGetQuery(con,"
+                                SELECT BillingCountry As Pais,
+                                       Count(InvoiceId) AS  T_Facturas_Pais,
+                                       SUM(Total) AS  Ingreso_T,
+                                       ROUND(AVG(Total) ,2) AS Promedio_Facturas
+                                FROM Invoice 
+                                GROUP BY Pais
+                                ORDER BY Ingreso_T DESC
+                                LIMIT 5;
+                                ")
+facturas_por_pais
+########################################################
+
+desviación <- dbGetQuery(con, "
+                         SELECT ROUND((AVG(Total * Total) - AVG(Total)*AVG(Total)), 2) AS Varianza
+                         FROM Invoice
+                         ")
+cat("Desviación_T_Facturas:", sqrt(desviación$Varianza))
+
+########################################################
+dbListFields(con, "Invoice")
+
+meses <- dbGetQuery(con, "
+                    SELECT SUBSTR(InvoiceDate, 6, 2) AS Mes, 
+                    ROUND(AVG(Total), 2) AS Promedio
+                    FROM Invoice
+                    GROUP BY Mes
+                    ORDER BY Promedio DESC
+                         ")
+cat("Mes con menor ingreso promedio:", min(meses$Mes), "con $", min(meses$Promedio))
+cat("Mes con mayor ingreso promedio:", max(meses$Mes), "con $", max(meses$Promedio))
+
+#######################################################
